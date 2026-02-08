@@ -10,6 +10,8 @@ export type GridLayoutProps = {
   cellHeight: number;
   /** 레이아웃에 쓴 실제 컨테이너 너비(px). 지정 시 컨테이너 width를 이 값으로 고정해 % 기반 위치가 올바르게 계산됨 */
   containerWidth?: number;
+  /** 지정 시 store.columns 대신 이 값으로 열 수 사용(반응형 breakpoint와 표시 일치용) */
+  columns?: number;
   /** 각 패널을 감쌀 추가 컨텐츠(children). (item) => ReactNode */
   children?: (item: GridItem) => React.ReactNode;
   /** 리사이즈 핸들에 표시할 커스텀 아이콘/요소. 미지정 시 기본 스타일 div 사용 */
@@ -33,13 +35,15 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
   cellWidth,
   cellHeight,
   containerWidth,
+  columns: columnsProp,
   children,
   resizeHandle,
   showGrid,
   draggable = true,
   resizable = true,
 }) => {
-  const { items, columns } = useLayoutState(store);
+  const { items, columns: columnsFromStore } = useLayoutState(store);
+  const columns = columnsProp ?? columnsFromStore;
   const containerRef = useRef<HTMLDivElement>(null);
 
   /** 드래그 시 store는 drop 시에만 갱신. 이동 중에는 preview 위치만 state로 보관 */
