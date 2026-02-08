@@ -207,7 +207,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
         position: "relative",
         width: "100%",
         minWidth: 0,
-        minHeight: toPx(totalH),
+        height: toPx(totalH),
       }}
     >
       {Boolean(showGrid) && (
