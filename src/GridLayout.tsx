@@ -200,6 +200,8 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
       style={{
         position: "relative",
         width: toPx(totalW),
+        maxWidth: "100%",
+        minWidth: 0,
         minHeight: toPx(totalH),
       }}
     >
