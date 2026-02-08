@@ -1,5 +1,5 @@
 {
-  "name": "react-griditty"
+  "name": "react-griditty",
   "version": "1.0.5",
   "description": "React binding for layout-store: GridLayout with drag/resize → LayoutAction",
   "main": "dist/index.js",
