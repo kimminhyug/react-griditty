@@ -8,6 +8,8 @@ export type GridLayoutProps = {
   cellWidth: number;
   /** 그리드 한 칸 높이(px) */
   cellHeight: number;
+  /** 레이아웃에 쓴 실제 컨테이너 너비(px). 지정 시 컨테이너 width를 이 값으로 고정해 % 기반 위치가 올바르게 계산됨 */
+  containerWidth?: number;
   /** 각 패널을 감쌀 추가 컨텐츠(children). (item) => ReactNode */
   children?: (item: GridItem) => React.ReactNode;
   /** 리사이즈 핸들에 표시할 커스텀 아이콘/요소. 미지정 시 기본 스타일 div 사용 */
@@ -30,6 +32,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
   store,
   cellWidth,
   cellHeight,
+  containerWidth,
   children,
   resizeHandle,
   showGrid,
@@ -77,10 +80,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
       const cw = getCellWidthFromRect(rect);
       const pixelX = e.clientX - rect.left;
       const pixelY = e.clientY - rect.top;
-      const gridX = Math.max(
-        0,
-        Math.min(columns - 1, Math.round(pixelX / cw)),
-      );
+      const gridX = Math.max(0, Math.min(columns - 1, Math.round(pixelX / cw)));
       const gridY = pixelToGridY(pixelY);
       setDrag((prev) => (prev ? { ...prev, gridX, gridY } : null));
     },
@@ -198,16 +198,20 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
   const isDragging = (item: GridItem) => Boolean(drag && item.id === drag.id);
 
   const pct = (n: number) => `${n}%`;
-  const colPct = (gridUnits: number) => (columns > 0 ? (gridUnits / columns) * 100 : 0);
+  const colPct = (gridUnits: number) =>
+    columns > 0 ? (gridUnits / columns) * 100 : 0;
 
   return (
     <div
       ref={containerRef}
       style={{
         position: "relative",
-        width: "100%",
+        ...(containerWidth != null
+          ? { width: toPx(containerWidth), maxWidth: "100%" }
+          : { width: "100%", maxWidth: "100%" }),
         minWidth: 0,
         height: toPx(totalH),
+        overflow: "hidden",
       }}
     >
       {Boolean(showGrid) && (
