@@ -55,35 +55,36 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
     startPixelY: number;
   } | null>(null);
 
-  const pixelToGridX = useCallback(
-    (pixelX: number) =>
-      Math.max(0, Math.min(columns - 1, Math.round(pixelX / cellWidth))),
-    [columns, cellWidth],
-  );
   const pixelToGridY = useCallback(
     (pixelY: number) => Math.max(0, Math.round(pixelY / cellHeight)),
     [cellHeight],
-  );
-  const pixelToGridW = useCallback(
-    (pixelW: number) => Math.max(1, Math.round(pixelW / cellWidth)),
-    [cellWidth],
   );
   const pixelToGridH = useCallback(
     (pixelH: number) => Math.max(1, Math.round(pixelH / cellHeight)),
     [cellHeight],
   );
 
+  /** 드래그/리사이즈 시 컨테이너 실제 너비로 픽셀→그리드 변환 (반응형 유지) */
+  const getCellWidthFromRect = useCallback(
+    (rect: DOMRect) => (columns > 0 ? rect.width / columns : cellWidth),
+    [columns, cellWidth],
+  );
+
   const handleMove = useCallback(
     (e: MouseEvent) => {
       if (!drag || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
+      const cw = getCellWidthFromRect(rect);
       const pixelX = e.clientX - rect.left;
       const pixelY = e.clientY - rect.top;
-      const gridX = pixelToGridX(pixelX);
+      const gridX = Math.max(
+        0,
+        Math.min(columns - 1, Math.round(pixelX / cw)),
+      );
       const gridY = pixelToGridY(pixelY);
       setDrag((prev) => (prev ? { ...prev, gridX, gridY } : null));
     },
-    [drag, pixelToGridX, pixelToGridY],
+    [drag, columns, getCellWidthFromRect, pixelToGridY],
   );
   const handleMoveEnd = useCallback(() => {
     if (drag) {
@@ -101,25 +102,28 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
     (e: MouseEvent) => {
       if (!resize || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
+      const cw = getCellWidthFromRect(rect);
       const pixelX = e.clientX - rect.left;
       const pixelY = e.clientY - rect.top;
       const item = items.find((i) => i.id === resize.id);
       if (!item) return;
-      const baseLeft = item.x * cellWidth;
+      const baseLeft = item.x * cw;
       const baseTop = item.y * cellHeight;
-      const pixelW = Math.max(cellWidth, pixelX - baseLeft);
+      const pixelW = Math.max(cw, pixelX - baseLeft);
       const pixelH = Math.max(cellHeight, pixelY - baseTop);
-      const w = Math.min(columns - item.x, pixelToGridW(pixelW));
+      const w = Math.min(
+        columns - item.x,
+        Math.max(1, Math.round(pixelW / cw)),
+      );
       const h = pixelToGridH(pixelH);
       store.dispatch({ type: "resize", id: resize.id, w, h });
     },
     [
       resize,
       items,
-      cellWidth,
+      getCellWidthFromRect,
       cellHeight,
       columns,
-      pixelToGridW,
       pixelToGridH,
       store,
     ],
@@ -186,7 +190,6 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
     [resizable],
   );
 
-  const totalW = columns * cellWidth;
   const totalH =
     items.length > 0
       ? Math.max(...items.map((i) => i.y + i.h)) * cellHeight
@@ -194,13 +197,15 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
 
   const isDragging = (item: GridItem) => Boolean(drag && item.id === drag.id);
 
+  const pct = (n: number) => `${n}%`;
+  const colPct = (gridUnits: number) => (columns > 0 ? (gridUnits / columns) * 100 : 0);
+
   return (
     <div
       ref={containerRef}
       style={{
         position: "relative",
-        width: toPx(totalW),
-        maxWidth: "100%",
+        width: "100%",
         minWidth: 0,
         minHeight: toPx(totalH),
       }}
@@ -217,7 +222,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
               linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px),
               linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)
             `,
-            backgroundSize: `${cellWidth}px ${cellHeight}px`,
+            backgroundSize: `${pct(colPct(1))} ${cellHeight}px`,
             pointerEvents: "none",
           }}
         />
@@ -235,9 +240,9 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
                 aria-hidden
                 style={{
                   position: "absolute",
-                  left: toPx(item.x * cellWidth),
+                  left: pct(colPct(item.x)),
                   top: toPx(item.y * cellHeight),
-                  width: toPx(item.w * cellWidth),
+                  width: pct(colPct(item.w)),
                   height: toPx(item.h * cellHeight),
                   boxSizing: "border-box",
                   border: "2px dashed rgba(0,0,0,0.2)",
@@ -250,9 +255,9 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
               role="gridcell"
               style={{
                 position: "absolute",
-                left: toPx(displayX * cellWidth),
+                left: pct(colPct(displayX)),
                 top: toPx(displayY * cellHeight),
-                width: toPx(item.w * cellWidth),
+                width: pct(colPct(item.w)),
                 height: toPx(item.h * cellHeight),
                 boxSizing: "border-box",
                 cursor: draggable
