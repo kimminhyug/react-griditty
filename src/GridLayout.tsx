@@ -45,7 +45,6 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
   const { items, columns: columnsFromStore } = useLayoutState(store);
   const columns = columnsProp ?? columnsFromStore;
   const containerRef = useRef<HTMLDivElement>(null);
-
   /** 드래그 시 store는 drop 시에만 갱신. 이동 중에는 preview 위치만 state로 보관 */
   const [drag, setDrag] = useState<{
     id: string;
