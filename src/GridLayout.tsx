@@ -114,11 +114,14 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
       const baseTop = item.y * cellHeight;
       const pixelW = Math.max(cw, pixelX - baseLeft);
       const pixelH = Math.max(cellHeight, pixelY - baseTop);
-      const w = Math.min(
-        columns - item.x,
-        Math.max(1, Math.round(pixelW / cw)),
-      );
-      const h = pixelToGridH(pixelH);
+      const rawW = Math.max(1, Math.round(pixelW / cw));
+      const rawH = pixelToGridH(pixelH);
+      const minW = Math.max(1, item.minW ?? 1);
+      const maxW = Math.min(columns - item.x, item.maxW ?? columns - item.x);
+      const minH = Math.max(1, item.minH ?? 1);
+      const maxH = item.maxH ?? Infinity;
+      const w = Math.max(minW, Math.min(maxW, rawW));
+      const h = Math.max(minH, Math.min(maxH, rawH));
       store.dispatch({ type: "resize", id: resize.id, w, h });
     },
     [
